@@ -329,6 +329,26 @@
             .brand-header-top { font-size: 1.4rem; padding: 0 60px; }
             #mobile-menu-toggle { display: flex; }
         }
+        /* Searchable Select */
+        .searchable-select { position: relative; width: 100%; }
+        .searchable-select-input { padding-right: 35px; cursor: text; }
+        .searchable-select-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-light); pointer-events: none; }
+        .searchable-select-dropdown {
+            position: absolute; top: 100%; left: 0; right: 0; 
+            background: white; border: 1.5px solid var(--primary-soft); 
+            border-top: none; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+            max-height: 200px; overflow-y: auto; z-index: 4000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            margin-top: -2px;
+        }
+        .searchable-select-option {
+            padding: 10px 15px; cursor: pointer; transition: background 0.2s;
+            font-size: 0.9rem; border-bottom: 1px solid #f9f9f9;
+        }
+        .searchable-select-option:last-child { border-bottom: none; }
+        .searchable-select-option:hover { background: var(--primary-soft); color: var(--primary-dark); }
+        .searchable-select-option.selected { background: var(--primary); color: white; }
+        .searchable-select-empty { padding: 15px; text-align: center; color: #ccc; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -450,6 +470,76 @@
             );
         };
 
+        const SearchableSelect = ({ options, value, onSelect, placeholder, name, required }) => {
+            const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+            const [searchTerm, setSearchTerm] = useState(value || '');
+            const containerRef = useRef(null);
+
+            useEffect(() => {
+                const handleClickOutside = (event) => {
+                    if (containerRef.current && !containerRef.current.contains(event.target)) {
+                        setIsDropdownOpen(false);
+                        // Reset search term to selected value if not selected
+                        if (!value) setSearchTerm('');
+                        else setSearchTerm(value);
+                    }
+                };
+                document.addEventListener('mousedown', handleClickOutside);
+                return () => document.removeEventListener('mousedown', handleClickOutside);
+            }, [value]);
+
+            // Sync searchTerm when value changes externally
+            useEffect(() => {
+                setSearchTerm(value || '');
+            }, [value]);
+
+            const filteredOptions = options.filter(opt => 
+                opt.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            return (
+                <div className="searchable-select" ref={containerRef}>
+                    <input 
+                        type="text" 
+                        className="searchable-select-input"
+                        placeholder={placeholder}
+                        value={searchTerm}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setIsDropdownOpen(true);
+                        }}
+                        onFocus={() => setIsDropdownOpen(true)}
+                        required={required}
+                    />
+                    <input type="hidden" name={name} value={value || ''} />
+                    <div className="searchable-select-icon">
+                        <Icon name={isDropdownOpen ? "chevron-up" : "chevron-down"} size={14} />
+                    </div>
+                    {isDropdownOpen && (
+                        <div className="searchable-select-dropdown">
+                            {filteredOptions.length > 0 ? (
+                                filteredOptions.map((opt, idx) => (
+                                    <div 
+                                        key={idx} 
+                                        className={`searchable-select-option ${opt === value ? 'selected' : ''}`}
+                                        onClick={() => {
+                                            onSelect(opt);
+                                            setSearchTerm(opt);
+                                            setIsDropdownOpen(false);
+                                        }}
+                                    >
+                                        {opt}
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="searchable-select-empty">Nenhum resultado encontrado</div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
         // --- App Principal ---
         const App = () => {
             const [activeTab, setActiveTab] = useState('dashboard');
@@ -468,6 +558,7 @@
             const [agendaView, setAgendaView] = useState('month'); // 'month', 'day_detail'
             const [selectedDate, setSelectedDate] = useState(dayjs());
             const [financeType, setFinanceType] = useState('income');
+            const [selectedClient, setSelectedClient] = useState('');
 
             useEffect(() => {
                 // Sanitização de dados: Garante que entradas não tenham categoria e valores sejam números
@@ -574,7 +665,7 @@
                     if (status === 'Concluído') recordCompletion(data);
                     setAppointments([...appointments, data]);
                 }
-                setModal(null); setEditingItem(null);
+                setModal(null); setEditingItem(null); setSelectedClient('');
             };
 
             const recordCompletion = (app) => {
@@ -610,6 +701,12 @@
             const navigateToTab = (tab) => {
                 setActiveTab(tab);
                 setIsMenuOpen(false);
+            };
+
+            const openAppModal = (item = null) => {
+                setEditingItem(item);
+                setSelectedClient(item ? item.client : '');
+                setModal('app');
             };
 
             // --- Rendereização das Seções ---
@@ -665,7 +762,7 @@
                                     .sort((a,b) => a.time.localeCompare(b.time))
                                     .map(a => (
                                     <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid #f9f9f9', cursor: 'pointer' }} 
-                                        onClick={() => { setEditingItem(a); setModal('app'); }}>
+                                        onClick={() => openAppModal(a)}>
                                         <div>
                                             <p style={{ fontWeight: 'bold' }}>{a.time} - {a.client}</p>
                                             <p style={{ fontSize: '0.75rem', color: '#999' }}>{a.service}</p>
@@ -688,7 +785,7 @@
                         <DailyTimeline 
                             date={selectedDate} 
                             appointments={appointments} 
-                            onEventClick={(a) => { setEditingItem(a); setModal('app'); }}
+                            onEventClick={(a) => openAppModal(a)}
                             onBack={() => setAgendaView('month')}
                         />
                     );
@@ -713,7 +810,7 @@
                             </div>
                             <div style={{ display: 'flex', gap: '10px' }}>
                                 <button className="btn btn-outline" onClick={() => { setSelectedDate(dayjs()); setAgendaView('day_detail'); }}>Hoje</button>
-                                <button className="btn btn-primary" onClick={() => setModal('app')}><Icon name="plus-lg"/> Novo</button>
+                                <button className="btn btn-primary" onClick={() => openAppModal()}><Icon name="plus-lg"/> Novo</button>
                             </div>
                         </header>
 
@@ -887,7 +984,7 @@
 
                     {/* Modais */}
                     {modal && (
-                        <div className="modal-overlay" onClick={() => { setModal(null); setEditingItem(null); }}>
+                        <div className="modal-overlay" onClick={() => { setModal(null); setEditingItem(null); setSelectedClient(''); }}>
                             <div className="glass-card" style={{ background: 'white', width: '100%', maxWidth: '450px' }} onClick={e => e.stopPropagation()}>
                                 <h2>Gestão de {modal.toUpperCase()}</h2>
                                 {modal === 'finance' && (
@@ -916,11 +1013,23 @@
                                     </form>
                                 )}
                                 {modal === 'app' && (
-                                    <form onSubmit={handleSaveAppointment} style={{ marginTop: '20px' }}>
+                                    <form onSubmit={(e) => {
+                                            if (!selectedClient) {
+                                                e.preventDefault();
+                                                alert('Por favor, selecione um cliente.');
+                                                return;
+                                            }
+                                            handleSaveAppointment(e);
+                                        }} style={{ marginTop: '20px' }}>
                                         <div className="form-group"><label>CLIENTE</label>
-                                            <select name="client" defaultValue={editingItem?.client} required>
-                                                {clients.map(c => <option key={c.id}>{c.name}</option>)}
-                                            </select>
+                                            <SearchableSelect
+                                                name="client"
+                                                options={clients.map(c => c.name)}
+                                                value={selectedClient}
+                                                onSelect={(val) => setSelectedClient(val)}
+                                                placeholder="Digite ou busque um cliente..."
+                                                required
+                                            />
                                         </div>
                                         <div className="form-group"><label>SERVIÇO</label>
                                             <select name="service" defaultValue={editingItem?.service} required>
@@ -941,7 +1050,7 @@
                                         <div style={{ display: 'flex', gap: '10px' }}>
                                             <button type="submit" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Agendar</button>
                                             {editingItem && (
-                                                <button type="button" className="btn btn-outline" style={{ color: 'var(--error)', borderColor: 'var(--error)' }} onClick={() => { setAppointments(appointments.filter(a => a.id !== editingItem.id)); setModal(null); }}>Apagar</button>
+                                                <button type="button" className="btn btn-outline" style={{ color: 'var(--error)', borderColor: 'var(--error)' }} onClick={() => { setAppointments(appointments.filter(a => a.id !== editingItem.id)); setModal(null); setSelectedClient(''); }}>Apagar</button>
                                             )}
                                         </div>
                                     </form>
@@ -969,7 +1078,7 @@
                                         <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Salvar</button>
                                     </form>
                                 )}
-                                <button className="btn" style={{ width: '100%', marginTop: '10px', background: 'transparent', color: '#999' }} onClick={() => { setModal(null); setEditingItem(null); }}>Fechar</button>
+                                <button className="btn" style={{ width: '100%', marginTop: '10px', background: 'transparent', color: '#999' }} onClick={() => { setModal(null); setEditingItem(null); setSelectedClient(''); }}>Fechar</button>
                             </div>
                         </div>
                     )}
