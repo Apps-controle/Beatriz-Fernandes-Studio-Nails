@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beatriz Fernandes Studio Nails - CRM</title>
+    
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Day.js + Plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/pt-br.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/customParseFormat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isBetween.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isSameOrBefore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isSameOrAfter.js"></script>
+    <script>
+        dayjs.extend(window.dayjs_plugin_customParseFormat);
+        dayjs.extend(window.dayjs_plugin_isBetween);
+        dayjs.extend(window.dayjs_plugin_isSameOrBefore);
+        dayjs.extend(window.dayjs_plugin_isSameOrAfter);
+        dayjs.locale('pt-br');
+    </script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Great+Vibes&display=swap" rel="stylesheet">
+
+    <style>
+        @font-face { 
+            font-family: "Hello Paris Serif Regular"; 
+            src: url("https://db.onlinewebfonts.com/t/af9dbbacda3360d434dcce8ab8b6c38f.eot"); 
+            src: url("https://db.onlinewebfonts.com/t/af9dbbacda3360d434dcce8ab8b6c38f.eot?#iefix")format("embedded-opentype"), 
+                 url("https://db.onlinewebfonts.com/t/af9dbbacda3360d434dcce8ab8b6c38f.woff2")format("woff2"), 
+                 url("https://db.onlinewebfonts.com/t/af9dbbacda3360d434dcce8ab8b6c38f.woff")format("woff"), 
+                 url("https://db.onlinewebfonts.com/t/af9dbbacda3360d434dcce8ab8b6c38f.ttf")format("truetype"), 
+                 url("https://db.onlinewebfonts.com/t/af9dbbacda3360d434dcce8ab8b6c38f.svg#Hello Paris Serif Regular")format("svg"); 
+        }
+
+        :root {
+            --primary: #D11E82;
+            --primary-soft: #fbe7f1;
+            --primary-dark: #A51465;
+            --accent: #D4AF37;
+            --text-dark: #2d2d2d;
+            --text-light: #6d6d6d;
+            --bg-main: #ffffff;
+            --bg-soft: #fff9fb;
+            --white: #ffffff;
+            --success: #4CAF50;
+            --error: #FF5252;
+            --shadow: 0 4px 25px rgba(209, 30, 130, 0.1);
+            --glass: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            background-color: var(--bg-soft); 
+            color: var(--text-dark); 
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, h4 { font-family: 'Playfair Display', serif; font-weight: 700; color: var(--primary-dark); }
+
+        .app-container { display: flex; flex-direction: column; min-height: 100vh; position: relative; }
+
+        .top-bar-branding {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.5); /* Semi-transparent */
+            backdrop-filter: blur(5px);
+            z-index: 1500;
+            padding: 0 20px;
+        }
+
+        #mobile-menu-toggle {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(209, 30, 130, 0.3);
+        }
+
+        /* Sidebar and Main Content */
+        .main-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+        }
+
+        aside { 
+            width: 280px; background: white; border-right: 1px solid #f0f0f0; 
+            display: flex; flex-direction: column; padding: 40px 20px;
+            position: sticky; top: 100px; height: calc(100vh - 100px);
+            box-shadow: 2px 0 20px rgba(0,0,0,0.02);
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        @media (max-width: 992px) {
+            aside {
+                position: fixed;
+                left: 0;
+                transform: translateX(-100%);
+            }
+            aside.open {
+                transform: translateX(0);
+            }
+            #mobile-menu-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        /* Main Content */
+        main { flex: 1; padding: 30px; overflow-y: auto; max-width: 100%; }
+
+        @media (max-width: 768px) {
+            main { padding: 15px; padding-top: 80px; }
+        }
+
+        /* Generic Components */
+        .glass-card {
+            background: var(--glass); 
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border); 
+            border-radius: 20px;
+            box-shadow: var(--shadow); 
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn {
+            padding: 10px 20px; border-radius: 12px; border: none;
+            cursor: pointer; font-weight: 600; transition: all 0.2s ease;
+            display: inline-flex; align-items: center; gap: 8px; font-family: inherit;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn-accent { background: var(--accent); color: white; }
+        .btn-outline { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
+        .btn-outline:hover { background: var(--primary-soft); }
+
+        .nav-btn {
+            width: 100%; justify-content: flex-start; background: transparent;
+            margin-bottom: 8px; color: var(--text-light); padding: 12px 15px; border-radius: 12px;
+        }
+        .nav-btn.active { background: var(--primary); color: white; }
+
+        /* Tables */
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { text-align: left; padding: 15px; background: var(--primary-soft); color: var(--primary-dark); border-bottom: 2px solid var(--primary); }
+        td { padding: 15px; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(6px);
+            display: grid; place-items: center; z-index: 3000;
+            padding: 20px;
+        }
+
+        /* Agenda Calendar */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #eee;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .calendar-day {
+            background: white;
+            min-height: 120px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .calendar-day:hover { background: var(--bg-soft); }
+        .calendar-day.header { min-height: auto; background: var(--primary-soft); font-weight: bold; padding: 12px; color: var(--primary-dark); text-align: center; cursor: default; }
+        .calendar-day.not-month { background: #fafafa; color: #ccc; }
+        
+        .calendar-event {
+            font-size: 0.7rem;
+            padding: 4px 6px;
+            border-radius: 6px;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+        }
+
+        /* Daily Timeline */
+        .timeline-container {
+            display: flex;
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-top: 20px;
+            border: 1px solid #eee;
+        }
+        .timeline-sidebar {
+            width: 80px;
+            background: var(--primary-soft);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #eee;
+        }
+        .timeline-hour {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            border-bottom: 1px solid rgba(209, 30, 130, 0.1);
+        }
+        .timeline-content {
+            flex: 1;
+            position: relative;
+            background-color: white;
+            background-image: linear-gradient(#eee 1px, transparent 1px);
+            background-size: 100% 60px;
+        }
+        .timeline-grid-item {
+            height: 60px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+        .timeline-event {
+            position: absolute;
+            left: 5px;
+            right: 5px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            z-index: 10;
+            transition: transform 0.2s;
+            overflow: hidden;
+        }
+        .timeline-event:hover { transform: scale(1.02); z-index: 20; }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px; color: var(--text-light); }
+        input, select, textarea { 
+            width: 100%; padding: 12px; border: 1.5px solid var(--primary-soft); 
+            border-radius: 10px; outline: none; font-family: inherit; font-size: 1rem;
+        }
+        input:focus, select:focus { border-color: var(--primary); }
+
+        .logo-img { width: 100%; max-width: 150px; margin-bottom: 30px; align-self: center; }
+
+        .search-container { position: relative; margin-bottom: 20px; }
+        .search-icon { position: absolute; left: 15px; top: 12px; color: #ccc; }
+        .search-input { padding-left: 45px; }
+
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Branding Typography */
+        .brand-header-top { 
+            font-family: 'Hello Paris Serif Regular', serif; 
+            font-size: 2.2rem; 
+            margin: 0;
+            letter-spacing: 1px;
+            color: var(--primary-dark);
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .brand-header-top { font-size: 1.4rem; padding: 0 60px; }
+            #mobile-menu-toggle { display: flex; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+        
+        // --- Helpers ---
+        const Icon = ({ name, size = 18, color = 'currentColor', className = '' }) => (
+            <i className={`bi bi-${name} ${className}`} style={{ fontSize: size, color: color }}></i>
+        );
+
+        const formatCurrency = (val) => `€ ${Number(val).toLocaleString('pt-PT', { minimumFractionDigits: 2 })}`;
+
+        const STATUS_COLORS = {
+            'Agendado': '#D11E82',
+            'Confirmado': '#007bff',
+            'Concluído': '#4CAF50',
+            'Cancelado': '#FF5252'
+        };
+
+        // --- Componentes ---
+
+        const FinanceChart = ({ finances }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+                const ctx = chartRef.current.getContext('2d');
+                if (chartInstance.current) chartInstance.current.destroy();
+
+                const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                const incomeData = Array(12).fill(0);
+                const expenseData = Array(12).fill(0);
+
+                finances.forEach(f => {
+                    const d = dayjs(f.date, 'DD/MM/YYYY');
+                    if (d.isValid()) {
+                        const m = d.month();
+                        if (f.type === 'income') incomeData[m] += Number(f.amount);
+                        else expenseData[m] += Number(f.amount);
+                    }
+                });
+
+                chartInstance.current = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: [
+                            { label: 'Entradas', data: incomeData, backgroundColor: '#D11E82', borderRadius: 4 },
+                            { label: 'Saídas', data: expenseData, backgroundColor: '#2d2d2d', borderRadius: 4 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'bottom' } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }, [finances]);
+
+            return <canvas ref={chartRef}></canvas>;
+        };
+
+        const DailyTimeline = ({ date, appointments, onEventClick, onBack }) => {
+            const hours = Array.from({ length: 15 }, (_, i) => i + 8); // 08:00 to 22:00
+            
+            const dayApps = useMemo(() => {
+                return appointments
+                    .filter(a => a.date === date.format('YYYY-MM-DD'))
+                    .sort((a, b) => a.time.localeCompare(b.time));
+            }, [appointments, date]);
+
+            const getEventStyle = (time, duration) => {
+                const [h, m] = time.split(':').map(Number);
+                const startMinutes = (h - 8) * 60 + m;
+                const top = startMinutes; // 1px per min since 1 hour block is 60px
+                const height = duration || 60;
+                return { top: `${top}px`, height: `${height}px` };
+            };
+
+            return (
+                <div className="fade-in">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <div>
+                            <button className="btn btn-outline" onClick={onBack} style={{ padding: '8px 12px', marginRight: '15px' }}>
+                                <Icon name="chevron-left" /> Voltar
+                            </button>
+                            <h2 style={{ display: 'inline-block' }}>{date.format('dddd, DD [de] MMMM')}</h2>
+                        </div>
+                    </div>
+
+                    <div className="timeline-container">
+                        <div className="timeline-sidebar">
+                            {hours.map(h => (
+                                <div key={h} className="timeline-hour">{h.toString().padStart(2, '0')}:00</div>
+                            ))}
+                        </div>
+                        <div className="timeline-content">
+                            {hours.map(h => <div key={h} className="timeline-grid-item"></div>)}
+                            {dayApps.map(a => (
+                                <div 
+                                    key={a.id} 
+                                    className="timeline-event"
+                                    onClick={() => onEventClick(a)}
+                                    style={{ 
+                                        ...getEventStyle(a.time, a.duration),
+                                        background: STATUS_COLORS[a.status] || '--primary'
+                                    }}
+                                >
+                                    <div style={{ fontWeight: 'bold' }}>{a.time} - {a.client}</div>
+                                    <div style={{ fontSize: '0.75rem' }}>{a.service}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- App Principal ---
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            
+            // Estado Persistente
+            const [clients, setClients] = useState(() => JSON.parse(localStorage.getItem('nail_studio_gold_clients') || '[]'));
+            const [services, setServices] = useState(() => JSON.parse(localStorage.getItem('nail_studio_gold_services') || '[{"id":1,"name":"Manicure Simples","price":15,"duration":30,"category":"Mãos"},{"id":2,"name":"Gel com Extensão","price":45,"duration":90,"category":"Mãos"}]'));
+            const [appointments, setAppointments] = useState(() => JSON.parse(localStorage.getItem('nail_studio_gold_apps') || '[]'));
+            const [finances, setFinances] = useState(() => JSON.parse(localStorage.getItem('nail_studio_gold_finances') || '[]'));
+
+            // UI
+            const [modal, setModal] = useState(null);
+            const [editingItem, setEditingItem] = useState(null);
+            const [clientSearch, setClientSearch] = useState('');
+            const [agendaView, setAgendaView] = useState('month'); // 'month', 'day_detail'
+            const [selectedDate, setSelectedDate] = useState(dayjs());
+            const [financeType, setFinanceType] = useState('income');
+
+            useEffect(() => {
+                // Sanitização de dados: Garante que entradas não tenham categoria e valores sejam números
+                const sanitizedFinances = finances.map(f => ({
+                    ...f,
+                    amount: Number(f.amount) || 0,
+                    category: f.type === 'income' ? '' : f.category
+                }));
+                
+                if (JSON.stringify(sanitizedFinances) !== JSON.stringify(finances)) {
+                    setFinances(sanitizedFinances);
+                }
+
+                localStorage.setItem('nail_studio_gold_clients', JSON.stringify(clients));
+                localStorage.setItem('nail_studio_gold_services', JSON.stringify(services));
+                localStorage.setItem('nail_studio_gold_apps', JSON.stringify(appointments));
+                localStorage.setItem('nail_studio_gold_finances', JSON.stringify(finances));
+            }, [clients, services, appointments, finances]);
+
+            // --- Cálculos ---
+            const stats = useMemo(() => {
+                const now = dayjs();
+                const curMonth = now.month();
+                const curYear = now.year();
+                
+                const thisMonthFinances = finances.filter(f => {
+                    const d = dayjs(f.date, 'DD/MM/YYYY');
+                    return d.month() === curMonth && d.year() === curYear;
+                });
+                
+                const lastMonthFinances = finances.filter(f => {
+                    const d = dayjs(f.date, 'DD/MM/YYYY');
+                    const lastM = curMonth === 0 ? 11 : curMonth - 1;
+                    const lastY = curMonth === 0 ? curYear - 1 : curYear;
+                    return d.month() === lastM && d.year() === lastY;
+                });
+
+                // Faturamento Bruto (Entradas do mês)
+                const income = thisMonthFinances.filter(f => f.type === 'income').reduce((s, x) => s + Number(x.amount), 0);
+                const lastIncome = lastMonthFinances.filter(f => f.type === 'income').reduce((s, x) => s + Number(x.amount), 0);
+                const growth = lastIncome === 0 ? 100 : ((income - lastIncome) / lastIncome) * 100;
+
+                // Taxa de Atendimento: Concluídos / (Concluídos + Cancelados) do mês
+                const monthApps = appointments.filter(a => {
+                    const d = dayjs(a.date);
+                    return d.month() === curMonth && d.year() === curYear;
+                });
+                const completedCount = monthApps.filter(a => a.status === 'Concluído').length;
+                const cancelledCount = monthApps.filter(a => a.status === 'Cancelado').length;
+                const attendanceRate = (completedCount + cancelledCount) === 0 ? 100 : (completedCount / (completedCount + cancelledCount)) * 100;
+
+                // Saldos por Categoria: (Faturamento * %) - Despesas da categoria
+                const getExpenseSum = (cat) => thisMonthFinances.filter(f => f.type === 'expense' && f.category === cat).reduce((s, x) => s + Number(x.amount), 0);
+
+                return {
+                    income,
+                    growth,
+                    attendanceRate,
+                    clientCount: clients.length,
+                    salary: (income * 0.5) - getExpenseSum('Salário'),
+                    invest: (income * 0.1) - getExpenseSum('Investimento'),
+                    business: (income * 0.4) - getExpenseSum('Empresa/Despesas')
+                };
+            }, [finances, clients, appointments]);
+
+            // --- Handlers ---
+            const handleSaveClient = (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const data = {
+                    id: editingItem ? editingItem.id : Date.now(),
+                    name: fd.get('name'),
+                    phone: fd.get('phone'),
+                    email: fd.get('email'),
+                    totalSpent: editingItem ? editingItem.totalSpent : 0
+                };
+                if (editingItem) setClients(clients.map(c => c.id === data.id ? data : c));
+                else setClients([data, ...clients]);
+                setModal(null); setEditingItem(null);
+            };
+
+            const handleSaveAppointment = (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const srv = services.find(s => s.name === fd.get('service'));
+                const status = fd.get('status');
+                
+                const data = {
+                    id: editingItem ? editingItem.id : Date.now(),
+                    client: fd.get('client'),
+                    service: srv.name,
+                    price: Number(srv.price),
+                    date: fd.get('date'),
+                    time: fd.get('time'),
+                    duration: srv.duration,
+                    status: status
+                };
+
+                if (editingItem) {
+                    // Se mudar para concluído, gera entrada automática
+                    if (status === 'Concluído' && editingItem.status !== 'Concluído') recordCompletion(data);
+                    setAppointments(appointments.map(a => a.id === data.id ? data : a));
+                } else {
+                    if (status === 'Concluído') recordCompletion(data);
+                    setAppointments([...appointments, data]);
+                }
+                setModal(null); setEditingItem(null);
+            };
+
+            const recordCompletion = (app) => {
+                const entry = {
+                    id: Date.now(),
+                    date: dayjs(app.date).format('DD/MM/YYYY'),
+                    type: 'income',
+                    category: '', // No category for automatic income
+                    description: `Serviço: ${app.service} - ${app.client}`,
+                    amount: Number(app.price),
+                    isService: true
+                };
+                setFinances(prev => [entry, ...prev]);
+                setClients(prev => prev.map(c => c.name === app.client ? { ...c, totalSpent: (Number(c.totalSpent) || 0) + Number(app.price) } : c));
+            };
+
+            const handleSaveFinance = (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const entry = {
+                    id: Date.now(),
+                    date: dayjs(fd.get('date')).format('DD/MM/YYYY'),
+                    type: fd.get('type'),
+                    category: fd.get('type') === 'income' ? '' : fd.get('category'),
+                    description: fd.get('description'),
+                    amount: parseFloat(fd.get('amount')),
+                    isService: false
+                };
+                setFinances([entry, ...finances]);
+                setModal(null);
+            };
+
+            const navigateToTab = (tab) => {
+                setActiveTab(tab);
+                setIsMenuOpen(false);
+            };
+
+            // --- Rendereização das Seções ---
+
+            const renderDashboard = () => (
+                <div className="fade-in">
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                        <div className="glass-card">
+                            <label>FATURAMENTO BRUTO</label>
+                            <h2 style={{ fontSize: '2.4rem' }}>{formatCurrency(stats.income)}</h2>
+                            <p style={{ color: stats.growth >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                                <Icon name={stats.growth >= 0 ? "arrow-up" : "arrow-down"}/> {Math.abs(stats.growth).toFixed(1)}% vs mês anterior
+                            </p>
+                        </div>
+                        <div className="glass-card">
+                            <label>TAXA ATENDIMENTO</label>
+                            <h2 style={{ fontSize: '2.4rem' }}>{stats.attendanceRate.toFixed(1)}%</h2>
+                            <p style={{ color: 'var(--text-light)' }}>Eficiência (Concluídos / Cancelados)</p>
+                        </div>
+                        <div className="glass-card">
+                            <label>CLIENTES TOTAIS</label>
+                            <h2 style={{ fontSize: '2.4rem' }}>{stats.clientCount}</h2>
+                            <p style={{ color: 'var(--text-light)' }}>Contatos registrados</p>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '30px' }}>
+                        <div className="glass-card" style={{ borderTop: '5px solid var(--primary)' }}>
+                            <label>SALÁRIO (50%)</label>
+                            <h2 style={{ color: 'var(--primary)' }}>{formatCurrency(stats.salary)}</h2>
+                        </div>
+                        <div className="glass-card" style={{ borderTop: '5px solid var(--accent)' }}>
+                            <label>INVESTIMENTO (10%)</label>
+                            <h2 style={{ color: 'var(--accent)' }}>{formatCurrency(stats.invest)}</h2>
+                        </div>
+                        <div className="glass-card" style={{ borderTop: '5px solid #333' }}>
+                            <label>EMPRESA/DESPESAS (40%)</label>
+                            <h2 style={{ color: '#333' }}>{formatCurrency(stats.business)}</h2>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '30px', marginTop: '30px' }}>
+                        <div className="glass-card">
+                            <h3>Performance Financeira</h3>
+                            <div style={{ marginTop: '20px' }}><FinanceChart finances={finances} /></div>
+                        </div>
+                        <div className="glass-card">
+                            <h3>Próximos Hoje</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
+                                {appointments
+                                    .filter(a => a.date === dayjs().format('YYYY-MM-DD'))
+                                    .sort((a,b) => a.time.localeCompare(b.time))
+                                    .map(a => (
+                                    <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid #f9f9f9', cursor: 'pointer' }} 
+                                        onClick={() => { setEditingItem(a); setModal('app'); }}>
+                                        <div>
+                                            <p style={{ fontWeight: 'bold' }}>{a.time} - {a.client}</p>
+                                            <p style={{ fontSize: '0.75rem', color: '#999' }}>{a.service}</p>
+                                        </div>
+                                        <span style={{ fontSize: '0.65rem', background: STATUS_COLORS[a.status], color: 'white', padding: '4px 10px', borderRadius: '10px', height: 'fit-content' }}>
+                                            {a.status}
+                                        </span>
+                                    </div>
+                                ))}
+                                {appointments.filter(a => a.date === dayjs().format('YYYY-MM-DD')).length === 0 && <p style={{ color: '#ccc', textAlign: 'center' }}>Vazio hoje.</p>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const renderAgenda = () => {
+                if (agendaView === 'day_detail') {
+                    return (
+                        <DailyTimeline 
+                            date={selectedDate} 
+                            appointments={appointments} 
+                            onEventClick={(a) => { setEditingItem(a); setModal('app'); }}
+                            onBack={() => setAgendaView('month')}
+                        />
+                    );
+                }
+
+                const start = dayjs(selectedDate).startOf('month');
+                const days = [];
+                let curr = dayjs(start).startOf('week');
+                const last = dayjs(selectedDate).endOf('month').endOf('week');
+
+                while (curr.isSameOrBefore(last, 'day')) {
+                    days.push(curr);
+                    curr = curr.add(1, 'day');
+                }
+
+                return (
+                    <div className="fade-in">
+                        <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                            <div>
+                                <h1 style={{ fontSize: '1.8rem' }}>Agenda</h1>
+                                <p style={{ color: 'var(--text-light)', fontWeight: 'bold', textTransform: 'uppercase' }}>{selectedDate.format('MMMM YYYY')}</p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button className="btn btn-outline" onClick={() => { setSelectedDate(dayjs()); setAgendaView('day_detail'); }}>Hoje</button>
+                                <button className="btn btn-primary" onClick={() => setModal('app')}><Icon name="plus-lg"/> Novo</button>
+                            </div>
+                        </header>
+
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
+                            <button className="btn btn-outline" onClick={() => setSelectedDate(selectedDate.subtract(1, 'month'))}><Icon name="chevron-left"/></button>
+                            <button className="btn btn-outline" onClick={() => setSelectedDate(selectedDate.add(1, 'month'))}><Icon name="chevron-right"/></button>
+                        </div>
+
+                        <div className="calendar-grid">
+                            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => <div key={d} className="calendar-day header">{d}</div>)}
+                            {days.map((d, i) => {
+                                const dStr = d.format('YYYY-MM-DD');
+                                const dayApps = appointments
+                                    .filter(a => a.date === dStr)
+                                    .sort((a,b) => a.time.localeCompare(b.time));
+                                const isCurrentMonth = d.isSame(selectedDate, 'month');
+                                return (
+                                    <div key={i} className={`calendar-day ${!isCurrentMonth ? 'not-month' : ''}`} onClick={() => { setSelectedDate(d); setAgendaView('day_detail'); }}>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: d.isSame(dayjs(), 'day') ? 'bold' : 'normal', color: d.isSame(dayjs(), 'day') ? 'var(--primary)' : 'inherit' }}>{d.date()}</span>
+                                        {dayApps.slice(0, 3).map(a => (
+                                            <div key={a.id} className="calendar-event" style={{ background: STATUS_COLORS[a.status] }}>
+                                                {a.time} {a.client}
+                                            </div>
+                                        ))}
+                                        {dayApps.length > 3 && <div style={{ fontSize: '0.6rem', color: '#999', textAlign: 'center' }}>+ {dayApps.length - 3} mais</div>}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderFinance = () => (
+                <div className="fade-in">
+                    <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
+                        <h1 style={{ fontSize: '1.8rem' }}>Gestão Financeira</h1>
+                        <button className="btn btn-primary" onClick={() => setModal('finance')}><Icon name="plus-lg"/> Lançamento</button>
+                    </header>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                        <div className="glass-card" style={{ borderLeft: '10px solid var(--success)', color: 'var(--success)' }}>
+                            <label>ENTRADAS (Mês)</label>
+                            <h2>{formatCurrency(finances.filter(f => f.type === 'income' && dayjs(f.date, 'DD/MM/YYYY').month() === dayjs().month()).reduce((s,x)=>s+Number(x.amount),0))}</h2>
+                        </div>
+                        <div className="glass-card" style={{ borderLeft: '10px solid var(--error)', color: 'var(--error)' }}>
+                            <label>SAÍDAS (Mês)</label>
+                            <h2>{formatCurrency(finances.filter(f => f.type === 'expense' && dayjs(f.date, 'DD/MM/YYYY').month() === dayjs().month()).reduce((s,x)=>s+Number(x.amount),0))}</h2>
+                        </div>
+                    </div>
+
+                    <div className="glass-card" style={{ padding: 0, marginTop: '30px' }}>
+                        <div className="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Categoria</th>
+                                        <th>Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {finances.map(f => (
+                                        <tr key={f.id}>
+                                            <td>{f.date}</td>
+                                            <td>{f.description}</td>
+                                            <td>
+                                                <span style={{ 
+                                                    fontSize: '0.7rem', 
+                                                    padding: '2px 8px', 
+                                                    background: f.type === 'income' ? 'var(--primary-soft)' : '#f0f0f0', 
+                                                    color: f.type === 'income' ? 'var(--primary-dark)' : 'inherit',
+                                                    borderRadius: '10px',
+                                                    fontWeight: f.type === 'income' ? 'bold' : 'normal'
+                                                }}>
+                                                    {f.type === 'income' ? 'ENTRADA' : f.category}
+                                                </span>
+                                            </td>
+                                            <td style={{ fontWeight: 'bold', color: f.type === 'income' ? 'var(--success)' : 'var(--error)' }}>
+                                                {f.type === 'income' ? '+' : '-'} {formatCurrency(f.amount)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // --- Gerenciador Principal ---
+            return (
+                <div className="app-container">
+                    <div className="top-bar-branding">
+                        <button id="mobile-menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                            <Icon name={isMenuOpen ? "x-lg" : "list"} />
+                        </button>
+                        <h1 className="brand-header-top">Beatriz Fernandes Studio Nails</h1>
+                    </div>
+
+                    <div className="main-container">
+                        <aside className={isMenuOpen ? 'open' : ''}>
+                            <nav style={{ flex: 1 }}>
+                            <button onClick={() => navigateToTab('dashboard')} className={`btn nav-btn ${activeTab === 'dashboard' && 'active'}`}><Icon name="grid-1x2-fill"/> Painel Geral</button>
+                            <button onClick={() => navigateToTab('agenda')} className={`btn nav-btn ${activeTab === 'agenda' && 'active'}`}><Icon name="calendar3"/> Agenda Profissional</button>
+                            <button onClick={() => navigateToTab('clientes')} className={`btn nav-btn ${activeTab === 'clientes' && 'active'}`}><Icon name="people-fill"/> Clientes</button>
+                            <button onClick={() => navigateToTab('financeiro')} className={`btn nav-btn ${activeTab === 'financeiro' && 'active'}`}><Icon name="currency-euro"/> Gestão Financeira</button>
+                            <button onClick={() => navigateToTab('servicos')} className={`btn nav-btn ${activeTab === 'servicos' && 'active'}`}><Icon name="stars"/> Serviços</button>
+                        </nav>
+                        <div style={{ textAlign: 'center', fontSize: '0.65rem', color: '#ccc' }}>v5.0 Ultimate Studio Pro</div>
+                    </aside>
+
+                    <main>
+                        {activeTab === 'dashboard' && renderDashboard()}
+                        {activeTab === 'agenda' && renderAgenda()}
+                        {activeTab === 'clientes' && (
+                            <div className="fade-in">
+                                <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
+                                    <h1 style={{ fontSize: '1.8rem' }}>Clientes</h1>
+                                    <button className="btn btn-primary" onClick={() => setModal('client')}><Icon name="plus-lg"/> Cadastrar</button>
+                                </header>
+                                <div className="search-container">
+                                    <Icon name="search" className="search-icon"/>
+                                    <input className="search-input" placeholder="Buscar cliente..." value={clientSearch} onChange={(e) => setClientSearch(e.target.value)}/>
+                                </div>
+                                <div className="glass-card" style={{ padding: 0 }}>
+                                    <div className="table-container">
+                                        <table>
+                                            <thead><tr><th>Nome</th><th>Contato</th><th>Consumo</th><th>Ações</th></tr></thead>
+                                            <tbody>
+                                                {clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).map(c => (
+                                                    <tr key={c.id}>
+                                                        <td style={{ fontWeight: '600' }}>{c.name}</td>
+                                                        <td>{c.phone}</td>
+                                                        <td style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{formatCurrency(c.totalSpent || 0)}</td>
+                                                        <td style={{ display: 'flex', gap: '8px' }}>
+                                                            <button className="btn btn-outline" style={{ padding: '6px' }} onClick={() => { setEditingItem(c); setModal('client'); }}><Icon name="pencil" size={14}/></button>
+                                                            <button className="btn btn-outline" style={{ padding: '6px', color: 'var(--error)', borderColor: 'var(--error)' }} onClick={() => setClients(clients.filter(x => x.id !== c.id))}><Icon name="trash" size={14}/></button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'financeiro' && renderFinance()}
+                        {activeTab === 'servicos' && (
+                            <div className="fade-in">
+                                <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
+                                    <h1 style={{ fontSize: '1.8rem' }}>Catálogo de Serviços</h1>
+                                    <button className="btn btn-primary" onClick={() => setModal('service')}><Icon name="plus-lg"/> Adicionar</button>
+                                </header>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                                    {services.map(s => (
+                                        <div key={s.id} className="glass-card" style={{ borderLeft: '10px solid var(--primary)' }}>
+                                            <h3>{s.name}</h3>
+                                            <h2 style={{ fontSize: '2rem', margin: '15px 0', color: 'var(--primary)' }}>{formatCurrency(s.price)}</h2>
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { setEditingItem(s); setModal('service'); }}>Editar</button>
+                                                <button className="btn btn-outline" style={{ flex: 1, color: 'var(--error)', borderColor: 'var(--error)' }} onClick={() => setServices(services.filter(x => x.id !== s.id))}>Remover</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Modais */}
+                    {modal && (
+                        <div className="modal-overlay" onClick={() => { setModal(null); setEditingItem(null); }}>
+                            <div className="glass-card" style={{ background: 'white', width: '100%', maxWidth: '450px' }} onClick={e => e.stopPropagation()}>
+                                <h2>Gestão de {modal.toUpperCase()}</h2>
+                                {modal === 'finance' && (
+                                    <form onSubmit={handleSaveFinance} style={{ marginTop: '20px' }}>
+                                        <div className="form-group">
+                                            <label>TIPO</label>
+                                            <select name="type" value={financeType} onChange={(e) => setFinanceType(e.target.value)}>
+                                                <option value="income">Entrada (+)</option>
+                                                <option value="expense">Saída (-)</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group"><label>VALOR (€)</label><input name="amount" type="number" step="0.01" required /></div>
+                                        <div className="form-group"><label>MOTIVO</label><input name="description" required /></div>
+                                        
+                                        {financeType === 'expense' && (
+                                            <div className="form-group">
+                                                <label>CATEGORIA</label>
+                                                <select name="category" required>
+                                                    <option>Salário</option><option>Investimento</option><option>Empresa/Despesas</option>
+                                                </select>
+                                            </div>
+                                        )}
+                                        
+                                        <div className="form-group"><label>DATA</label><input name="date" type="date" defaultValue={dayjs().format('YYYY-MM-DD')} required /></div>
+                                        <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Registrar</button>
+                                    </form>
+                                )}
+                                {modal === 'app' && (
+                                    <form onSubmit={handleSaveAppointment} style={{ marginTop: '20px' }}>
+                                        <div className="form-group"><label>CLIENTE</label>
+                                            <select name="client" defaultValue={editingItem?.client} required>
+                                                {clients.map(c => <option key={c.id}>{c.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="form-group"><label>SERVIÇO</label>
+                                            <select name="service" defaultValue={editingItem?.service} required>
+                                                {services.map(s => <option key={s.id}>{s.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="form-group"><label>DATA | HORA</label>
+                                            <div style={{display: 'flex', gap: '10px'}}>
+                                                <input name="date" type="date" defaultValue={editingItem?.date || selectedDate.format('YYYY-MM-DD')} required />
+                                                <input name="time" type="time" defaultValue={editingItem?.time} required />
+                                            </div>
+                                        </div>
+                                        <div className="form-group"><label>STATUS</label>
+                                            <select name="status" defaultValue={editingItem?.status || 'Agendado'}>
+                                                <option>Agendado</option><option>Confirmado</option><option>Concluído</option><option>Cancelado</option>
+                                            </select>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <button type="submit" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Agendar</button>
+                                            {editingItem && (
+                                                <button type="button" className="btn btn-outline" style={{ color: 'var(--error)', borderColor: 'var(--error)' }} onClick={() => { setAppointments(appointments.filter(a => a.id !== editingItem.id)); setModal(null); }}>Apagar</button>
+                                            )}
+                                        </div>
+                                    </form>
+                                )}
+                                {modal === 'client' && (
+                                    <form onSubmit={handleSaveClient} style={{ marginTop: '20px' }}>
+                                        <div className="form-group"><label>NOME</label><input name="name" defaultValue={editingItem?.name} required /></div>
+                                        <div className="form-group"><label>WHATSAPP</label><input name="phone" defaultValue={editingItem?.phone} required /></div>
+                                        <div className="form-group"><label>EMAIL</label><input name="email" defaultValue={editingItem?.email} /></div>
+                                        <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Salvar</button>
+                                    </form>
+                                )}
+                                {modal === 'service' && (
+                                    <form onSubmit={(e) => {
+                                        e.preventDefault();
+                                        const fd = new FormData(e.target);
+                                        const data = { id: editingItem?.id || Date.now(), name: fd.get('name'), price: parseFloat(fd.get('price')), duration: parseInt(fd.get('duration')) };
+                                        if (editingItem) setServices(services.map(s => s.id === data.id ? data : s));
+                                        else setServices([...services, data]);
+                                        setModal(null); setEditingItem(null);
+                                    }} style={{ marginTop: '20px' }}>
+                                        <div className="form-group"><label>NOME DO SERVIÇO</label><input name="name" defaultValue={editingItem?.name} required /></div>
+                                        <div className="form-group"><label>PREÇO (€)</label><input name="price" type="number" step="0.01" defaultValue={editingItem?.price} required /></div>
+                                        <div className="form-group"><label>DURAÇÃO (MIN)</label><input name="duration" type="number" defaultValue={editingItem?.duration || 60} required /></div>
+                                        <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Salvar</button>
+                                    </form>
+                                )}
+                                <button className="btn" style={{ width: '100%', marginTop: '10px', background: 'transparent', color: '#999' }} onClick={() => { setModal(null); setEditingItem(null); }}>Fechar</button>
+                            </div>
+                        </div>
+                    )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
