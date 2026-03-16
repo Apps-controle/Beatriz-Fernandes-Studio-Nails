@@ -705,16 +705,21 @@
                 e.preventDefault();
                 const fd = new FormData(e.target);
                 const entry = {
-                    id: Date.now(),
+                    id: editingItem ? editingItem.id : Date.now(),
                     date: dayjs(fd.get('date')).format('DD/MM/YYYY'),
                     type: fd.get('type'),
                     category: fd.get('type') === 'income' ? '' : fd.get('category'),
                     description: fd.get('description'),
                     amount: parseFloat(fd.get('amount')),
-                    isService: false
+                    isService: editingItem ? editingItem.isService : false
                 };
-                setFinances([entry, ...finances]);
+                if (editingItem) {
+                    setFinances(finances.map(f => f.id === entry.id ? entry : f));
+                } else {
+                    setFinances([entry, ...finances]);
+                }
                 setModal(null);
+                setEditingItem(null);
             };
 
             const navigateToTab = (tab) => {
@@ -867,7 +872,7 @@
                 <div className="fade-in">
                     <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
                         <h1 style={{ fontSize: '1.8rem' }}>Gestão Financeira</h1>
-                        <button className="btn btn-primary" onClick={() => setModal('finance')}><Icon name="plus-lg"/> Lançamento</button>
+                        <button className="btn btn-primary" onClick={() => { setEditingItem(null); setFinanceType('income'); setModal('finance'); }}><Icon name="plus-lg"/> Lançamento</button>
                     </header>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
@@ -890,6 +895,7 @@
                                         <th>Descrição</th>
                                         <th>Categoria</th>
                                         <th>Valor</th>
+                                        <th>Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -911,6 +917,34 @@
                                             </td>
                                             <td style={{ fontWeight: 'bold', color: f.type === 'income' ? 'var(--success)' : 'var(--error)' }}>
                                                 {f.type === 'income' ? '+' : '-'} {formatCurrency(f.amount)}
+                                            </td>
+                                            <td>
+                                                <div style={{ display: 'flex', gap: '6px' }}>
+                                                    <button
+                                                        className="btn btn-outline"
+                                                        style={{ padding: '6px 10px' }}
+                                                        title="Editar"
+                                                        onClick={() => {
+                                                            setEditingItem(f);
+                                                            setFinanceType(f.type);
+                                                            setModal('finance');
+                                                        }}
+                                                    >
+                                                        <Icon name="pencil" size={14}/>
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-outline"
+                                                        style={{ padding: '6px 10px', color: 'var(--error)', borderColor: 'var(--error)' }}
+                                                        title="Excluir"
+                                                        onClick={() => {
+                                                            if (window.confirm(`Excluir "${f.description}"?`)) {
+                                                                setFinances(finances.filter(x => x.id !== f.id));
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Icon name="trash" size={14}/>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -1005,7 +1039,7 @@
                     {modal && (
                         <div className="modal-overlay" onClick={() => { setModal(null); setEditingItem(null); setSelectedClient(''); }}>
                             <div className="glass-card" style={{ background: 'white', width: '100%', maxWidth: '450px' }} onClick={e => e.stopPropagation()}>
-                                <h2>Gestão de {modal.toUpperCase()}</h2>
+                                <h2>{modal === 'finance' ? (editingItem ? 'Editar Lançamento' : 'Novo Lançamento') : `Gestão de ${modal.toUpperCase()}`}</h2>
                                 {modal === 'finance' && (
                                     <form onSubmit={handleSaveFinance} style={{ marginTop: '20px' }}>
                                         <div className="form-group">
@@ -1015,20 +1049,20 @@
                                                 <option value="expense">Saída (-)</option>
                                             </select>
                                         </div>
-                                        <div className="form-group"><label>VALOR (€)</label><input name="amount" type="number" step="0.01" required /></div>
-                                        <div className="form-group"><label>MOTIVO</label><input name="description" required /></div>
+                                        <div className="form-group"><label>VALOR (€)</label><input name="amount" type="number" step="0.01" defaultValue={editingItem?.amount} required /></div>
+                                        <div className="form-group"><label>MOTIVO</label><input name="description" defaultValue={editingItem?.description} required /></div>
                                         
                                         {financeType === 'expense' && (
                                             <div className="form-group">
                                                 <label>CATEGORIA</label>
-                                                <select name="category" required>
+                                                <select name="category" defaultValue={editingItem?.category} required>
                                                     <option>Salário</option><option>Investimento</option><option>Empresa/Despesas</option>
                                                 </select>
                                             </div>
                                         )}
                                         
-                                        <div className="form-group"><label>DATA</label><input name="date" type="date" defaultValue={dayjs().format('YYYY-MM-DD')} required /></div>
-                                        <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Registrar</button>
+                                        <div className="form-group"><label>DATA</label><input name="date" type="date" defaultValue={editingItem ? dayjs(editingItem.date, 'DD/MM/YYYY').format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD')} required /></div>
+                                        <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>{editingItem ? 'Guardar Alterações' : 'Registrar'}</button>
                                     </form>
                                 )}
                                 {modal === 'app' && (
