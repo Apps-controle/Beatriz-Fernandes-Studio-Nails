@@ -331,23 +331,42 @@
         }
         /* Searchable Select */
         .searchable-select { position: relative; width: 100%; }
-        .searchable-select-input { padding-right: 35px; cursor: text; }
-        .searchable-select-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-light); pointer-events: none; }
+        .searchable-select-input { 
+            padding-left: 40px !important; 
+            padding-right: 15px !important; 
+            cursor: text !important; 
+            border-radius: 10px !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+        }
+        .searchable-select-input:focus { border-color: var(--primary) !important; }
+        .searchable-select-open .searchable-select-input {
+            border-bottom-left-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+        }
+        .searchable-select-search-icon { 
+            position: absolute; 
+            left: 13px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            color: var(--primary); 
+            pointer-events: none; 
+            font-size: 15px;
+        }
         .searchable-select-dropdown {
             position: absolute; top: 100%; left: 0; right: 0; 
-            background: white; border: 1.5px solid var(--primary-soft); 
-            border-top: none; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+            background: white; border: 1.5px solid var(--primary); 
+            border-top: none; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;
             max-height: 200px; overflow-y: auto; z-index: 4000;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            margin-top: -2px;
+            box-shadow: 0 10px 25px rgba(209, 30, 130, 0.15);
         }
         .searchable-select-option {
-            padding: 10px 15px; cursor: pointer; transition: background 0.2s;
-            font-size: 0.9rem; border-bottom: 1px solid #f9f9f9;
+            padding: 11px 15px; cursor: pointer; transition: background 0.15s;
+            font-size: 0.9rem; border-bottom: 1px solid #f5f5f5;
         }
         .searchable-select-option:last-child { border-bottom: none; }
-        .searchable-select-option:hover { background: var(--primary-soft); color: var(--primary-dark); }
-        .searchable-select-option.selected { background: var(--primary); color: white; }
+        .searchable-select-option:hover { background: var(--primary-soft); color: var(--primary-dark); font-weight: 600; }
+        .searchable-select-option.selected { background: var(--primary); color: white; font-weight: 600; }
         .searchable-select-empty { padding: 15px; text-align: center; color: #ccc; font-size: 0.85rem; }
     </style>
 </head>
@@ -479,49 +498,47 @@
                 const handleClickOutside = (event) => {
                     if (containerRef.current && !containerRef.current.contains(event.target)) {
                         setIsDropdownOpen(false);
-                        // Reset search term to selected value if not selected
-                        if (!value) setSearchTerm('');
-                        else setSearchTerm(value);
+                        setSearchTerm(value || '');
                     }
                 };
                 document.addEventListener('mousedown', handleClickOutside);
                 return () => document.removeEventListener('mousedown', handleClickOutside);
             }, [value]);
 
-            // Sync searchTerm when value changes externally
             useEffect(() => {
                 setSearchTerm(value || '');
             }, [value]);
 
-            const filteredOptions = options.filter(opt => 
+            const filteredOptions = options.filter(opt =>
                 opt.toLowerCase().includes(searchTerm.toLowerCase())
             );
 
             return (
-                <div className="searchable-select" ref={containerRef}>
-                    <input 
-                        type="text" 
+                <div className={`searchable-select ${isDropdownOpen ? 'searchable-select-open' : ''}`} ref={containerRef}>
+                    <i className="bi bi-search searchable-select-search-icon"></i>
+                    <input
+                        type="text"
                         className="searchable-select-input"
-                        placeholder={placeholder}
+                        placeholder={placeholder || 'Digite para buscar...'}
                         value={searchTerm}
+                        autoComplete="off"
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
+                            onSelect('');
                             setIsDropdownOpen(true);
                         }}
                         onFocus={() => setIsDropdownOpen(true)}
-                        required={required}
+                        required={required && !value}
                     />
                     <input type="hidden" name={name} value={value || ''} />
-                    <div className="searchable-select-icon">
-                        <Icon name={isDropdownOpen ? "chevron-up" : "chevron-down"} size={14} />
-                    </div>
                     {isDropdownOpen && (
                         <div className="searchable-select-dropdown">
                             {filteredOptions.length > 0 ? (
                                 filteredOptions.map((opt, idx) => (
-                                    <div 
-                                        key={idx} 
+                                    <div
+                                        key={idx}
                                         className={`searchable-select-option ${opt === value ? 'selected' : ''}`}
+                                        onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => {
                                             onSelect(opt);
                                             setSearchTerm(opt);
@@ -532,7 +549,9 @@
                                     </div>
                                 ))
                             ) : (
-                                <div className="searchable-select-empty">Nenhum resultado encontrado</div>
+                                <div className="searchable-select-empty">
+                                    <i className="bi bi-emoji-frown"></i> Nenhum cliente encontrado
+                                </div>
                             )}
                         </div>
                     )}
