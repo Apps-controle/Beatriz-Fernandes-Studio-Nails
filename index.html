@@ -578,6 +578,8 @@
             const [selectedDate, setSelectedDate] = useState(dayjs());
             const [financeType, setFinanceType] = useState('income');
             const [selectedClient, setSelectedClient] = useState('');
+            const [financeFilterStart, setFinanceFilterStart] = useState(() => dayjs().startOf('month').format('YYYY-MM-DD'));
+            const [financeFilterEnd, setFinanceFilterEnd] = useState(() => dayjs().endOf('month').format('YYYY-MM-DD'));
 
             useEffect(() => {
                 // Sanitização de dados: Garante que entradas não tenham categoria e valores sejam números
@@ -617,6 +619,8 @@
 
                 // Faturamento Bruto (Entradas do mês)
                 const income = thisMonthFinances.filter(f => f.type === 'income').reduce((s, x) => s + Number(x.amount), 0);
+                const expense = thisMonthFinances.filter(f => f.type === 'expense').reduce((s, x) => s + Number(x.amount), 0);
+                const netBalance = income - expense;
                 const lastIncome = lastMonthFinances.filter(f => f.type === 'income').reduce((s, x) => s + Number(x.amount), 0);
                 const growth = lastIncome === 0 ? 100 : ((income - lastIncome) / lastIncome) * 100;
 
@@ -634,6 +638,8 @@
 
                 return {
                     income,
+                    expense,
+                    netBalance,
                     growth,
                     attendanceRate,
                     clientCount: clients.length,
@@ -738,27 +744,34 @@
             const renderDashboard = () => (
                 <div className="fade-in">
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                        <div className="glass-card">
-                            <label>FATURAMENTO BRUTO</label>
-                            <h2 style={{ fontSize: '2.4rem' }}>{formatCurrency(stats.income)}</h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
+                        <div className="glass-card" style={{ borderTop: '5px solid var(--success)' }}>
+                            <label>ENTRADAS (Mês)</label>
+                            <h2 style={{ fontSize: '2rem', color: 'var(--success)' }}>{formatCurrency(stats.income)}</h2>
                             <p style={{ color: stats.growth >= 0 ? 'var(--success)' : 'var(--error)' }}>
                                 <Icon name={stats.growth >= 0 ? "arrow-up" : "arrow-down"}/> {Math.abs(stats.growth).toFixed(1)}% vs mês anterior
                             </p>
                         </div>
-                        <div className="glass-card">
-                            <label>TAXA ATENDIMENTO</label>
-                            <h2 style={{ fontSize: '2.4rem' }}>{stats.attendanceRate.toFixed(1)}%</h2>
-                            <p style={{ color: 'var(--text-light)' }}>Eficiência (Concluídos / Cancelados)</p>
+                        <div className="glass-card" style={{ borderTop: '5px solid var(--error)' }}>
+                            <label>SAÍDAS (Mês)</label>
+                            <h2 style={{ fontSize: '2rem', color: 'var(--error)' }}>{formatCurrency(stats.expense)}</h2>
+                            <p style={{ color: 'var(--text-light)' }}>Total de despesas</p>
+                        </div>
+                        <div className="glass-card" style={{ borderTop: `5px solid ${stats.netBalance >= 0 ? 'var(--primary)' : 'var(--error)'}` }}>
+                            <label>TOTAL FATURADO</label>
+                            <h2 style={{ fontSize: '2rem', color: stats.netBalance >= 0 ? 'var(--primary)' : 'var(--error)' }}>
+                                {stats.netBalance > 0 ? '+' : ''}{formatCurrency(stats.netBalance)}
+                            </h2>
+                            <p style={{ color: 'var(--text-light)' }}>Saldo líquido do mês</p>
                         </div>
                         <div className="glass-card">
-                            <label>CLIENTES TOTAIS</label>
-                            <h2 style={{ fontSize: '2.4rem' }}>{stats.clientCount}</h2>
-                            <p style={{ color: 'var(--text-light)' }}>Contatos registrados</p>
+                            <label>TAXA ATENDIMENTO</label>
+                            <h2 style={{ fontSize: '2rem' }}>{stats.attendanceRate.toFixed(1)}%</h2>
+                            <p style={{ color: 'var(--text-light)' }}>Eficiência de agenda</p>
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '30px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '30px' }}>
                         <div className="glass-card" style={{ borderTop: '5px solid var(--primary)' }}>
                             <label>SALÁRIO (50%)</label>
                             <h2 style={{ color: 'var(--primary)' }}>{formatCurrency(stats.salary)}</h2>
@@ -768,8 +781,12 @@
                             <h2 style={{ color: 'var(--accent)' }}>{formatCurrency(stats.invest)}</h2>
                         </div>
                         <div className="glass-card" style={{ borderTop: '5px solid #333' }}>
-                            <label>EMPRESA/DESPESAS (40%)</label>
+                            <label>EMPRESA/DESP (40%)</label>
                             <h2 style={{ color: '#333' }}>{formatCurrency(stats.business)}</h2>
+                        </div>
+                        <div className="glass-card" style={{ borderTop: '5px solid #ccc' }}>
+                            <label>CLIENTES TOTAIS</label>
+                            <h2 style={{ color: 'var(--text-dark)' }}>{stats.clientCount}</h2>
                         </div>
                     </div>
 
@@ -868,21 +885,67 @@
                 );
             };
 
-            const renderFinance = () => (
+            const renderFinance = () => {
+                const startDay = financeFilterStart ? dayjs(financeFilterStart).startOf('day') : dayjs('2000-01-01');
+                const endDay = financeFilterEnd ? dayjs(financeFilterEnd).endOf('day') : dayjs('2100-01-01');
+
+                const filteredFinances = finances.filter(f => {
+                    const d = dayjs(f.date, 'DD/MM/YYYY');
+                    return d.isSameOrAfter(startDay, 'day') && d.isSameOrBefore(endDay, 'day');
+                });
+
+                const totalIncome = filteredFinances.filter(f => f.type === 'income').reduce((s,x)=>s+Number(x.amount),0);
+                const totalExpense = filteredFinances.filter(f => f.type === 'expense').reduce((s,x)=>s+Number(x.amount),0);
+                const netBalance = totalIncome - totalExpense;
+
+                return (
                 <div className="fade-in">
                     <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
                         <h1 style={{ fontSize: '1.8rem' }}>Gestão Financeira</h1>
                         <button className="btn btn-primary" onClick={() => { setEditingItem(null); setFinanceType('income'); setModal('finance'); }}><Icon name="plus-lg"/> Lançamento</button>
                     </header>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                    <div className="glass-card" style={{ marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: '150px' }}>
+                            <label>Data Inicial</label>
+                            <input type="date" value={financeFilterStart} onChange={e => setFinanceFilterStart(e.target.value)} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: '150px' }}>
+                            <label>Data Final</label>
+                            <input type="date" value={financeFilterEnd} onChange={e => setFinanceFilterEnd(e.target.value)} />
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '22px', flexWrap: 'wrap' }}>
+                            <button className="btn btn-outline" onClick={() => {
+                                setFinanceFilterStart(dayjs().startOf('month').format('YYYY-MM-DD'));
+                                setFinanceFilterEnd(dayjs().endOf('month').format('YYYY-MM-DD'));
+                            }}>Este Mês</button>
+                            <button className="btn btn-outline" onClick={() => {
+                                setFinanceFilterStart(dayjs().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'));
+                                setFinanceFilterEnd(dayjs().subtract(1, 'month').endOf('month').format('YYYY-MM-DD'));
+                            }}>Mês Passado</button>
+                            <button className="btn btn-outline" onClick={() => {
+                                setFinanceFilterStart(dayjs().startOf('year').format('YYYY-MM-DD'));
+                                setFinanceFilterEnd(dayjs().endOf('year').format('YYYY-MM-DD'));
+                            }}>Este Ano</button>
+                            <button className="btn btn-outline" onClick={() => {
+                                setFinanceFilterStart('');
+                                setFinanceFilterEnd('');
+                            }}>Tudo</button>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
                         <div className="glass-card" style={{ borderLeft: '10px solid var(--success)', color: 'var(--success)' }}>
-                            <label>ENTRADAS (Mês)</label>
-                            <h2>{formatCurrency(finances.filter(f => f.type === 'income' && dayjs(f.date, 'DD/MM/YYYY').month() === dayjs().month()).reduce((s,x)=>s+Number(x.amount),0))}</h2>
+                            <label>ENTRADAS (Período)</label>
+                            <h2>{formatCurrency(totalIncome)}</h2>
                         </div>
                         <div className="glass-card" style={{ borderLeft: '10px solid var(--error)', color: 'var(--error)' }}>
-                            <label>SAÍDAS (Mês)</label>
-                            <h2>{formatCurrency(finances.filter(f => f.type === 'expense' && dayjs(f.date, 'DD/MM/YYYY').month() === dayjs().month()).reduce((s,x)=>s+Number(x.amount),0))}</h2>
+                            <label>SAÍDAS (Período)</label>
+                            <h2>{formatCurrency(totalExpense)}</h2>
+                        </div>
+                        <div className="glass-card" style={{ borderLeft: '10px solid var(--primary)', color: netBalance >= 0 ? 'var(--primary)' : 'var(--error)' }}>
+                            <label>RESULTADO TOTAL (Período)</label>
+                            <h2>{netBalance > 0 ? '+' : ''}{formatCurrency(netBalance)}</h2>
                         </div>
                     </div>
 
@@ -899,7 +962,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {finances.map(f => (
+                                    {filteredFinances.map(f => (
                                         <tr key={f.id}>
                                             <td>{f.date}</td>
                                             <td>{f.description}</td>
@@ -954,6 +1017,7 @@
                     </div>
                 </div>
             );
+            };
 
             // --- Gerenciador Principal ---
             return (
