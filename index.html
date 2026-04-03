@@ -403,10 +403,11 @@
                 const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
                 const incomeData = Array(12).fill(0);
                 const expenseData = Array(12).fill(0);
+                const currentYear = dayjs().year();
 
                 finances.forEach(f => {
                     const d = dayjs(f.date, 'DD/MM/YYYY');
-                    if (d.isValid()) {
+                    if (d.isValid() && d.year() === currentYear) {
                         const m = d.month();
                         if (f.type === 'income') incomeData[m] += Number(f.amount);
                         else expenseData[m] += Number(f.amount);
@@ -622,7 +623,7 @@
                 const expense = thisMonthFinances.filter(f => f.type === 'expense').reduce((s, x) => s + Number(x.amount), 0);
                 const netBalance = income - expense;
                 const lastIncome = lastMonthFinances.filter(f => f.type === 'income').reduce((s, x) => s + Number(x.amount), 0);
-                const growth = lastIncome === 0 ? 100 : ((income - lastIncome) / lastIncome) * 100;
+                const growth = lastIncome === 0 ? (income > 0 ? 100 : 0) : ((income - lastIncome) / lastIncome) * 100;
 
                 // Taxa de Atendimento: Concluídos / (Concluídos + Cancelados) do mês
                 const monthApps = appointments.filter(a => {
@@ -674,11 +675,11 @@
                 const data = {
                     id: editingItem ? editingItem.id : Date.now(),
                     client: fd.get('client'),
-                    service: srv.name,
-                    price: Number(srv.price),
+                    service: srv ? srv.name : fd.get('service'),
+                    price: srv ? Number(srv.price) : Number(editingItem?.price || 0),
                     date: fd.get('date'),
                     time: fd.get('time'),
-                    duration: srv.duration,
+                    duration: srv ? srv.duration : (editingItem?.duration || 60),
                     status: status
                 };
 
@@ -1147,6 +1148,17 @@
                                                 placeholder="Digite ou busque um cliente..."
                                                 required
                                             />
+                                            {selectedClient && clients.find(c => c.name === selectedClient)?.phone && (
+                                                <a 
+                                                    href={`https://wa.me/${clients.find(c => c.name === selectedClient).phone.replace(/\D/g, '')}`} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="btn fade-in" 
+                                                    style={{ background: '#25D366', color: 'white', marginTop: '10px', width: '100%', justifyContent: 'center', textDecoration: 'none' }}
+                                                >
+                                                    <Icon name="whatsapp" /> Conversar no WhatsApp
+                                                </a>
+                                            )}
                                         </div>
                                         <div className="form-group"><label>SERVIÇO</label>
                                             <select name="service" defaultValue={editingItem?.service} required>
@@ -1174,7 +1186,7 @@
                                         <div style={{ display: 'flex', gap: '10px' }}>
                                             <button type="submit" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Agendar</button>
                                             {editingItem && (
-                                                <button type="button" className="btn btn-outline" style={{ color: 'var(--error)', borderColor: 'var(--error)' }} onClick={() => { setAppointments(appointments.filter(a => a.id !== editingItem.id)); setModal(null); setSelectedClient(''); }}>Apagar</button>
+                                                <button type="button" className="btn btn-outline" style={{ color: 'var(--error)', borderColor: 'var(--error)' }} onClick={() => { if(window.confirm("Atenção: Tem certeza que deseja apagar este agendamento?")) { setAppointments(appointments.filter(a => a.id !== editingItem.id)); setModal(null); setSelectedClient(''); } }}>Apagar</button>
                                             )}
                                         </div>
                                     </form>
