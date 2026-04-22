@@ -587,7 +587,7 @@
                 const sanitizedFinances = finances.map(f => ({
                     ...f,
                     amount: Number(f.amount) || 0,
-                    category: f.type === 'income' ? '' : f.category
+                    category: f.type === 'expense' ? f.category : ''
                 }));
                 
                 if (JSON.stringify(sanitizedFinances) !== JSON.stringify(finances)) {
@@ -636,6 +636,8 @@
 
                 // Saldos por Categoria: (Faturamento * %) - Despesas da categoria
                 const getExpenseSum = (cat) => thisMonthFinances.filter(f => f.type === 'expense' && f.category === cat).reduce((s, x) => s + Number(x.amount), 0);
+                const getTransferOutSum = (cat) => thisMonthFinances.filter(f => f.type === 'transfer' && f.from === cat).reduce((s, x) => s + Number(x.amount), 0);
+                const getTransferInSum = (cat) => thisMonthFinances.filter(f => f.type === 'transfer' && f.to === cat).reduce((s, x) => s + Number(x.amount), 0);
 
                 return {
                     income,
@@ -644,9 +646,9 @@
                     growth,
                     attendanceRate,
                     clientCount: clients.length,
-                    salary: (income * 0.5) - getExpenseSum('Salário'),
-                    invest: (income * 0.1) - getExpenseSum('Investimento'),
-                    business: (income * 0.4) - getExpenseSum('Empresa/Despesas')
+                    salary: (income * 0.5) - getExpenseSum('Salário') - getTransferOutSum('Salário') + getTransferInSum('Salário'),
+                    invest: (income * 0.1) - getExpenseSum('Investimento') - getTransferOutSum('Investimento') + getTransferInSum('Investimento'),
+                    business: (income * 0.4) - getExpenseSum('Empresa/Despesas') - getTransferOutSum('Empresa/Despesas') + getTransferInSum('Empresa/Despesas')
                 };
             }, [finances, clients, appointments]);
 
@@ -711,14 +713,23 @@
             const handleSaveFinance = (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
+                const type = fd.get('type');
+                
+                if (type === 'transfer' && fd.get('from') === fd.get('to')) {
+                    alert('A origem e o destino não podem ser iguais.');
+                    return;
+                }
+
                 const entry = {
                     id: editingItem ? editingItem.id : Date.now(),
                     date: dayjs(fd.get('date')).format('DD/MM/YYYY'),
-                    type: fd.get('type'),
-                    category: fd.get('type') === 'income' ? '' : fd.get('category'),
+                    type: type,
+                    category: type === 'expense' ? fd.get('category') : '',
                     description: fd.get('description'),
                     amount: parseFloat(fd.get('amount')),
-                    isService: editingItem ? editingItem.isService : false
+                    isService: editingItem ? editingItem.isService : false,
+                    from: type === 'transfer' ? fd.get('from') : undefined,
+                    to: type === 'transfer' ? fd.get('to') : undefined
                 };
                 if (editingItem) {
                     setFinances(finances.map(f => f.id === entry.id ? entry : f));
@@ -971,16 +982,16 @@
                                                 <span style={{ 
                                                     fontSize: '0.7rem', 
                                                     padding: '2px 8px', 
-                                                    background: f.type === 'income' ? 'var(--primary-soft)' : '#f0f0f0', 
-                                                    color: f.type === 'income' ? 'var(--primary-dark)' : 'inherit',
+                                                    background: f.type === 'income' ? 'var(--primary-soft)' : (f.type === 'transfer' ? '#e0f7fa' : '#f0f0f0'), 
+                                                    color: f.type === 'income' ? 'var(--primary-dark)' : (f.type === 'transfer' ? '#006064' : 'inherit'),
                                                     borderRadius: '10px',
-                                                    fontWeight: f.type === 'income' ? 'bold' : 'normal'
+                                                    fontWeight: f.type === 'income' || f.type === 'transfer' ? 'bold' : 'normal'
                                                 }}>
-                                                    {f.type === 'income' ? 'ENTRADA' : f.category}
+                                                    {f.type === 'income' ? 'ENTRADA' : (f.type === 'transfer' ? `TRANSFERÊNCIA: ${f.from} ➔ ${f.to}` : f.category)}
                                                 </span>
                                             </td>
-                                            <td style={{ fontWeight: 'bold', color: f.type === 'income' ? 'var(--success)' : 'var(--error)' }}>
-                                                {f.type === 'income' ? '+' : '-'} {formatCurrency(f.amount)}
+                                            <td style={{ fontWeight: 'bold', color: f.type === 'income' ? 'var(--success)' : (f.type === 'transfer' ? '#00838f' : 'var(--error)') }}>
+                                                {f.type === 'income' ? '+' : (f.type === 'transfer' ? '⇄' : '-')} {formatCurrency(f.amount)}
                                             </td>
                                             <td>
                                                 <div style={{ display: 'flex', gap: '6px' }}>
@@ -1112,6 +1123,7 @@
                                             <select name="type" value={financeType} onChange={(e) => setFinanceType(e.target.value)}>
                                                 <option value="income">Entrada (+)</option>
                                                 <option value="expense">Saída (-)</option>
+                                                <option value="transfer">Transferir (⇄)</option>
                                             </select>
                                         </div>
                                         <div className="form-group"><label>VALOR (€)</label><input name="amount" type="number" step="0.01" defaultValue={editingItem?.amount} required /></div>
@@ -1123,6 +1135,27 @@
                                                 <select name="category" defaultValue={editingItem?.category} required>
                                                     <option>Salário</option><option>Investimento</option><option>Empresa/Despesas</option>
                                                 </select>
+                                            </div>
+                                        )}
+
+                                        {financeType === 'transfer' && (
+                                            <div style={{ display: 'flex', gap: '15px' }}>
+                                                <div className="form-group" style={{ flex: 1 }}>
+                                                    <label>ORIGEM</label>
+                                                    <select name="from" defaultValue={editingItem?.from || 'Salário'} required>
+                                                        <option value="Salário">Salário ({formatCurrency(stats.salary)})</option>
+                                                        <option value="Investimento">Investimento ({formatCurrency(stats.invest)})</option>
+                                                        <option value="Empresa/Despesas">Empresa/Despesas ({formatCurrency(stats.business)})</option>
+                                                    </select>
+                                                </div>
+                                                <div className="form-group" style={{ flex: 1 }}>
+                                                    <label>DESTINO</label>
+                                                    <select name="to" defaultValue={editingItem?.to || 'Investimento'} required>
+                                                        <option value="Salário">Salário ({formatCurrency(stats.salary)})</option>
+                                                        <option value="Investimento">Investimento ({formatCurrency(stats.invest)})</option>
+                                                        <option value="Empresa/Despesas">Empresa/Despesas ({formatCurrency(stats.business)})</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                         )}
                                         
